@@ -501,8 +501,7 @@ Usage is `nf-core schema validate <pipeline> <parameter file>`, eg:
 <!-- RICH-CODEX
 working_dir: tmp/nf-core-nextbigthing
 before_command: 'echo "{input: myfiles.csv, outdir: results}" > nf-params.json'
-timeout: 20
-after_command: rm nf-params.json
+timeout: 15
 -->
 
 ![`nf-core schema validate nf-core/rnaseq nf-params.json`](docs/images/nf-core-schema-validate.svg)
