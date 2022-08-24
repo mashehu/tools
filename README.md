@@ -18,7 +18,7 @@ A python package with helper tools for the nf-core community.
 
 - [`nf-core` tools installation](#installation)
 - [`nf-core list` - List available pipelines](#listing-pipelines)
-- [`nf-core launch` - Run a pipeline with interactive parameter prompts](#launch-a-pipeline)
+- [`nf-core launch` - Run a pipeline with interactive parameter prompts](#lnfaunch-a-pipeline)
 - [`nf-core download` - Download pipeline for offline use](#downloading-pipelines-for-offline-use)
 - [`nf-core licences` - List software licences in a pipeline](#pipeline-software-licences)
 - [`nf-core create` - Create a new pipeline with the nf-core template](#creating-a-new-pipeline)
@@ -502,7 +502,7 @@ before_command: 'echo "{input: myfiles.csv, outdir: results}" > nf-params.json'
 timeout: 15
 -->
 
-![`nf-core schema validate nf-core-rnaseq nf-params.json`](docs/images/nf-core-schema-validate.svg)
+![`nf-core schema validate nf-core-rnaseq/workflow nf-params.json`](docs/images/nf-core-schema-validate.svg)
 
 The `pipeline` option can be a directory containing a pipeline, a path to a schema file or the name of an nf-core pipeline (which will be downloaded using `nextflow pull`).
 
