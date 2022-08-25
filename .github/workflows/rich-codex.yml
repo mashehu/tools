@@ -32,3 +32,4 @@ jobs:
             nextflow -version &&
             nf-core --version
             PY_COLORS=true
+            COLUMNS=100
