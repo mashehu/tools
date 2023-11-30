@@ -14,6 +14,7 @@ on:
       - "CHANGELOG.md"
   release:
     types: [published]
+  workflow_dispatch:
 
 # Cancel if a newer run is started
 concurrency:
@@ -54,11 +55,31 @@ jobs:
       runner: ${{ matrix.runner }}
       run-tests: ${{ env.run-tests }}
 
-  test:
-    name: Test with Python ${{ needs.setup.outputs.python-version }} on ${{ needs.setup.outputs.runner }}
+  # create a test matrix based on all python files in /tests
+  list_tests:
+    name: Get test file matrix
     needs: setup
     if: ${{ needs.setup.outputs.run-tests == 'true' }}
     runs-on: ${{ needs.setup.outputs.runner }}
+    outputs:
+      tests: ${{ steps.list_tests.outputs.tests }}
+    steps:
+      - uses: actions/checkout@v2
+        name: Check out source-code repository
+
+      - name: List tests
+        id: list_tests
+        run: |
+          echo "tests=$(find tests -name '*.py' -exec basename {} .py \; | tr '\n' ',')" >> $GITHUB_ENV
+
+  test:
+    name: Test with Python ${{ needs.setup.outputs.python-version }} on ${{ needs.setup.outputs.runner }}
+    needs: [setup, list_tests]
+    if: ${{ needs.setup.outputs.run-tests == 'true' }}
+    runs-on: ${{ needs.setup.outputs.runner }}
+    strategy:
+      matrix:
+        test: ${{ needs.list_tests.outputs.tests }}
     steps:
       - uses: actions/checkout@v2
         name: Check out source-code repository
@@ -106,7 +127,7 @@ jobs:
           sudo mv nf-test /usr/local/bin/
 
       - name: Test with pytest
-        run: python3 -m pytest tests/ --color=yes --cov-report=xml --cov-config=.github/.coveragerc --cov=nf_core
+        run: python3 -m pytest tests/${{matrix.test}} --color=yes --cov-report=xml --cov-config=.github/.coveragerc --cov=nf_core --
 
       - uses: codecov/codecov-action@v1
         name: Upload code coverage report
