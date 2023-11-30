@@ -59,14 +59,14 @@ jobs:
 
       - name: List tests
         id: list_tests
-        run: | # get all python files in /tests and output it as a JSON list
-          echo "tests=$(find tests -name '*.py' | sed 's/tests\///g' | sed 's/.py//g' | tr '\n' ',' | sed 's/,$//g' | jq -R -s -c 'split(",")')" >> $GITHUB_ENV
+        run: | # get all python files in /tests except __init__.py and also all subdirectories
+          echo "tests=$(find tests -maxdepth 1 -not -name '__init__.py' -not -name 'tests' | sed 's/tests\///g' | tr '\n' ',')" >> $GITHUB_ENV
 
   test:
     name: Test with Python ${{ needs.setup.outputs.python-version }} on ${{ needs.setup.outputs.runner }}
     needs: [setup, list_tests]
     if: ${{ needs.setup.outputs.run-tests == 'true' }}
-    runs-on: ${{ needs.setup.outputs.runner }}
+    runs-on: ["self-hosted"]
     strategy:
       matrix:
         test: ${{ fromJson(needs.list_tests.outputs.tests) }}
@@ -117,7 +117,7 @@ jobs:
           sudo mv nf-test /usr/local/bin/
 
       - name: Test with pytest
-        run: python3 -m pytest tests/${{matrix.test}} --color=yes --cov-report=xml --cov-config=.github/.coveragerc --cov=nf_core --
+        run: python3 -m pytest tests/${{matrix.test}} --color=yes --cov-report=xml --cov-config=.github/.coveragerc --cov=nf_core
 
       - uses: codecov/codecov-action@v1
         name: Upload code coverage report
