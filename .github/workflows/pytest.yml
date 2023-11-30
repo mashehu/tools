@@ -52,16 +52,15 @@ jobs:
     if: ${{ needs.setup.outputs.run-tests == 'true' }}
     runs-on: ${{ needs.setup.outputs.runner }}
     outputs:
-      tests: ${{ env.TESTS }}
+      tests: ${{ env.tests }}
     steps:
       - uses: actions/checkout@v4
         name: Check out source-code repository
 
       - name: List tests
         id: list_tests
-        run: |
-          tests=$(find tests -name '*.py' -exec basename {} .py \; | tr '\n' ',' | sed 's/,$//')
-          echo "TESTS=$tests" >> $GITHUB_ENV
+        run: | # get all python files in /tests and output it as a JSON list
+          echo "tests=$(find tests -name '*.py' | sed 's/tests\///g' | sed 's/.py//g' | tr '\n' ',' | sed 's/,$//g' | jq -R -s -c 'split(",")')" >> $GITHUB_ENV
 
   test:
     name: Test with Python ${{ needs.setup.outputs.python-version }} on ${{ needs.setup.outputs.runner }}
@@ -70,7 +69,7 @@ jobs:
     runs-on: ${{ needs.setup.outputs.runner }}
     strategy:
       matrix:
-        test: ${{ needs.list_tests.outputs.tests }}
+        test: ${{ fromJson(needs.list_tests.outputs.tests) }}
     steps:
       - uses: actions/checkout@v4
         name: Check out source-code repository
