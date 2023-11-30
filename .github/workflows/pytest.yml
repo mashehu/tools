@@ -52,7 +52,7 @@ jobs:
     if: ${{ needs.setup.outputs.run-tests == 'true' }}
     runs-on: ${{ needs.setup.outputs.runner }}
     outputs:
-      tests: ${{ steps.list_tests.outputs.tests }}
+      tests: ${{ env.TESTS }}
     steps:
       - uses: actions/checkout@v4
         name: Check out source-code repository
@@ -60,7 +60,8 @@ jobs:
       - name: List tests
         id: list_tests
         run: |
-          echo "tests=$(find tests -name '*.py' -exec basename {} .py \; | tr '\n' ',')" >> $GITHUB_ENV
+          tests=$(find tests -name '*.py' -exec basename {} .py \; | tr '\n' ',' | sed 's/,$//')
+          echo "TESTS=$tests" >> $GITHUB_ENV
 
   test:
     name: Test with Python ${{ needs.setup.outputs.python-version }} on ${{ needs.setup.outputs.runner }}
