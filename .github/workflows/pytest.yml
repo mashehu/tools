@@ -117,7 +117,7 @@ jobs:
 
       - name: Test with pytest
         run: |
-          python3 -m pytest tests/${{matrix.test}} --color=yes --cov-report=xml --cov-config=.github/.coveragerc --cov=nf_core
+          python3 -m pytest tests/${{matrix.test}} --color=yes --cov-report=xml --cov-config=.github/.coveragerc --cov=nf_core || exit_code=$?
           # don't fail if no tests were collected, e.g. for test_licence.py
           if [ "${exit_code}" -eq 5 ]; then
             echo "No tests were collected"
@@ -127,7 +127,7 @@ jobs:
             exit 1
           fi
 
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v3
         name: Upload code coverage report
         with:
           if: success()
