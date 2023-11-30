@@ -48,8 +48,9 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "pip"
+          cache: "pip-${{ matrix.python-version }}-${{ runner.os }}"
         if: ${{ env.run-tests == 'true' }}
+
     outputs:
       python-version: ${{ matrix.python-version }}
       runner: ${{ matrix.runner }}
@@ -64,7 +65,7 @@ jobs:
     outputs:
       tests: ${{ steps.list_tests.outputs.tests }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         name: Check out source-code repository
 
       - name: List tests
