@@ -16,10 +16,9 @@ on:
     types: [published]
   workflow_dispatch:
 
-# Cancel if a newer run is started
+# Cancel if a newer run with the same name is queued
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,7 +60,7 @@ jobs:
         id: list_tests
         run:
           | # get all python files in /tests except __init__.py and also all subdirectories and remove trailing commas
-          echo "tests=$(find tests -maxdepth 1 -not -name '__init__.py' -not -name 'tests' -not -name 'data' | sed 's/tests\///g' | jq -R -s -c '{test: (split("\n")[:-1])}')" >> $GITHUB_ENV
+          echo "tests=$(find tests/test_* | sed 's/tests\///g' | jq -R -s -c '{test: (split("\n")[:-1])}')" >> $GITHUB_ENV
 
   test:
     name: Test with Python ${{ needs.setup.outputs.python-version }} on ${{ needs.setup.outputs.runner }}
