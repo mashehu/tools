@@ -61,7 +61,7 @@ jobs:
         id: list_tests
         run:
           | # get all python files in /tests except __init__.py and also all subdirectories and remove trailing commas
-          echo "tests=$(find tests -maxdepth 1 -not -name '__init__.py' -not -name 'tests' -not -name 'data' | sed 's/tests\///g' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_ENV
+          echo "tests=$(find tests -maxdepth 1 -not -name '__init__.py' -not -name 'tests' -not -name 'data' | sed 's/tests\///g' | jq -R -s -c '{test: (split("\n")[:-1])}')" >> $GITHUB_ENV
 
   test:
     name: Test with Python ${{ needs.setup.outputs.python-version }} on ${{ needs.setup.outputs.runner }}
@@ -69,8 +69,7 @@ jobs:
     if: ${{ needs.setup.outputs.run-tests == 'true' }}
     runs-on: ${{ needs.setup.outputs.runner }}
     strategy:
-      matrix:
-        test: ${{ needs.list_tests.outputs.tests }}
+      matrix: ${{ fromJson(needs.list_tests.outputs.tests) }}
     steps:
       - uses: actions/checkout@v4
         name: Check out source-code repository
