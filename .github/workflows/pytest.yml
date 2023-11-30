@@ -40,16 +40,6 @@ jobs:
         id: conditions
         run: echo "run-tests=${{ github.ref == 'refs/heads/master' || (matrix.runner == 'ubuntu-20.04' && matrix.python-version == '3.8') }}" >> $GITHUB_ENV
 
-      - name: Check out source-code repository
-        uses: actions/checkout@v4
-        if: ${{ env.run-tests == 'true' }}
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
-        if: ${{ env.run-tests == 'true' }}
     outputs:
       python-version: ${{ matrix.python-version }}
       runner: ${{ matrix.runner }}
@@ -64,7 +54,7 @@ jobs:
     outputs:
       tests: ${{ steps.list_tests.outputs.tests }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         name: Check out source-code repository
 
       - name: List tests
@@ -81,11 +71,11 @@ jobs:
       matrix:
         test: ${{ needs.list_tests.outputs.tests }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         name: Check out source-code repository
 
       - name: Set up Python ${{ needs.setup.outputs.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
           cache: "pip"
