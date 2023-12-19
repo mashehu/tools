@@ -10,6 +10,7 @@
 - Fix how the modules template references the conda environment file ([#2540](https://github.com/nf-core/tools/pull/2540))
 - Unset env variable JAVA_TOOL_OPTIONS in gitpod ([#2569](https://github.com/nf-core/tools/pull/2569))
 - Pin the version of nf-validation ([#2579](https://github.com/nf-core/tools/pull/2579))
+- Remove `docker.userEmulation` from nextflow.config in pipeline template ([#2580](https://github.com/nf-core/tools/pull/2580))
 
 ### Download
 
@@ -25,6 +26,7 @@
 - Correctly ignore `timeline.enabled`, `report.enabled`, `trace.enabled`, `dag.enabled` variables when linting a pipeline. ([#2507](https://github.com/nf-core/tools/pull/2507))
 - Lint nf-test main.nf.test tags include all used components in chained tests ([#2572](https://github.com/nf-core/tools/pull/2572))
 - Don't fail linting if md5sum for empty files are found in a stub test ([#2571](https://github.com/nf-core/tools/pull/2571))
+- Check for existence of test profile ([#2478](https://github.com/nf-core/tools/pull/2478))
 
 ### Modules
 
@@ -71,7 +73,6 @@
 - Update Gitpod profile resources to reflect base environment settings.
 - ([#747](https://github.com/nf-core/tools/issues/747)) Add to the template the code to dump the selected pipeline parameters into a json file.
 - [#2161] Disable process selector warnings by default.
-- Remove `docker.userEmulation` from nextflow.config in pipeline template ([#2580](https://github.com/nf-core/tools/pull/2580))
 
 ### Download
 
@@ -82,7 +83,6 @@
 ### Linting
 
 - Add new command `nf-core subworkflows lint` ([#2379](https://github.com/nf-core/tools/pull/2379))
-- Check for existence of test profile ([#2478](https://github.com/nf-core/tools/pull/2478))
 
 ### Modules
 
