@@ -15,7 +15,7 @@ from git.exc import GitCommandError
 
 import nf_core.utils
 from nf_core.components.components_utils import get_components_to_install
-from nf_core.lint_utils import dump_json_with_prettier
+from nf_core.lint_utils import dump_json_with_ruff
 from nf_core.modules.modules_repo import (
     NF_CORE_MODULES_NAME,
     NF_CORE_MODULES_REMOTE,
@@ -66,11 +66,16 @@ class ModulesJson:
         pipeline_config = nf_core.utils.fetch_wf_config(self.dir)
         pipeline_name = pipeline_config.get("manifest.name", "")
         pipeline_url = pipeline_config.get("manifest.homePage", "")
-        new_modules_json = {"name": pipeline_name.strip("'"), "homePage": pipeline_url.strip("'"), "repos": {}}
+        new_modules_json = {
+            "name": pipeline_name.strip("'"),
+            "homePage": pipeline_url.strip("'"),
+            "repos": {},
+        }
 
         if not self.modules_dir.exists():
             if rich.prompt.Confirm.ask(
-                "[bold][blue]?[/] Can't find a ./modules directory. Would you like me to create one?", default=True
+                "[bold][blue]?[/] Can't find a ./modules directory. Would you like me to create one?",
+                default=True,
             ):
                 log.info(f"Creating ./modules directory in '{self.dir}'")
                 self.modules_dir.mkdir()
@@ -204,7 +209,8 @@ class ModulesJson:
                     repos[nrepo_remote][component_type] = {}
                 repos[nrepo_remote][component_type][nrepo_name] = {}
                 dirs_not_covered = self.dir_tree_uncovered(
-                    directory, [Path(name) for url in repos for name in repos[url][component_type]]
+                    directory,
+                    [Path(name) for url in repos for name in repos[url][component_type]],
                 )
 
         return repos, renamed_dirs
@@ -291,7 +297,10 @@ class ModulesJson:
                     if correct_commit_sha is None:
                         # Check in the old path
                         correct_commit_sha = self.find_correct_commit_sha(
-                            component_type, component, repo_path / component_type / component, modules_repo
+                            component_type,
+                            component,
+                            repo_path / component_type / component,
+                            modules_repo,
                         )
                 if correct_commit_sha is None:
                     log.info(
@@ -320,7 +329,12 @@ class ModulesJson:
                             dead_components.append(component)
                         break
                     # Create a new modules repo with the selected branch, and retry find the sha
-                    modules_repo = ModulesRepo(remote_url=remote_url, branch=branch, no_pull=True, hide_progress=True)
+                    modules_repo = ModulesRepo(
+                        remote_url=remote_url,
+                        branch=branch,
+                        no_pull=True,
+                        hide_progress=True,
+                    )
                 else:
                     found_sha = True
                     break
@@ -454,7 +468,11 @@ class ModulesJson:
                 components_dict = module_repo[component_type][install_dir]
                 if "git_sha" not in components_dict[component] or "branch" not in components_dict[component]:
                     self.determine_branches_and_shas(
-                        component_type, component, git_url, module_repo["base_path"], [component]
+                        component_type,
+                        component,
+                        git_url,
+                        module_repo["base_path"],
+                        [component],
                     )
                 # Remove the module/subworkflow from modules/subworkflows without installation
                 module_repo[component_type][install_dir].pop(component)
@@ -1058,7 +1076,7 @@ class ModulesJson:
         # Sort the modules.json
         self.modules_json["repos"] = nf_core.utils.sort_dictionary(self.modules_json["repos"])
         if run_prettier:
-            dump_json_with_prettier(self.modules_json_path, self.modules_json)
+            dump_json_with_ruff(self.modules_json_path, self.modules_json)
         else:
             with open(self.modules_json_path, "w") as fh:
                 json.dump(self.modules_json, fh, indent=4)
@@ -1095,7 +1113,10 @@ class ModulesJson:
                     f"Was unable to reinstall some {component_type}. Removing 'modules.json' entries: {', '.join(uninstallable_components)}"
                 )
 
-            for (repo_url, install_dir), component_entries in remove_from_mod_json.items():
+            for (
+                repo_url,
+                install_dir,
+            ), component_entries in remove_from_mod_json.items():
                 for component in component_entries:
                     self.modules_json["repos"][repo_url][component_type][install_dir].pop(component)
                 if len(self.modules_json["repos"][repo_url][component_type][install_dir]) == 0:

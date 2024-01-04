@@ -18,7 +18,7 @@ from rich.syntax import Syntax
 
 import nf_core.list
 import nf_core.utils
-from nf_core.lint_utils import dump_json_with_prettier, run_prettier_on_file
+from nf_core.lint_utils import dump_json_with_ruff, run_prettier_on_file
 
 log = logging.getLogger(__name__)
 
@@ -165,7 +165,12 @@ class PipelineSchema:
         # Grouped schema properties in subschema definitions
         for defn_name, definition in self.schema.get("definitions", {}).items():
             for p_key, param in definition.get("properties", {}).items():
-                self.schema_params[p_key] = ("definitions", defn_name, "properties", p_key)
+                self.schema_params[p_key] = (
+                    "definitions",
+                    defn_name,
+                    "properties",
+                    p_key,
+                )
                 if "default" in param:
                     param = self.sanitise_param_default(param)
                     if param["default"] is not None:
@@ -178,7 +183,7 @@ class PipelineSchema:
         num_params += sum(len(d.get("properties", {})) for d in self.schema.get("definitions", {}).values())
         if not suppress_logging:
             log.info(f"Writing schema with {num_params} params: '{self.schema_filename}'")
-        dump_json_with_prettier(self.schema_filename, self.schema)
+        dump_json_with_ruff(self.schema_filename, self.schema)
 
     def load_input_params(self, params_path):
         """Load a given a path to a parameters file (JSON/YAML)
@@ -470,7 +475,14 @@ class PipelineSchema:
         Prints documentation for the schema.
         """
         if columns is None:
-            columns = ["parameter", "description", "type,", "default", "required", "hidden"]
+            columns = [
+                "parameter",
+                "description",
+                "type,",
+                "default",
+                "required",
+                "hidden",
+            ]
 
         output = self.schema_to_markdown(columns)
         if format == "html":
@@ -568,7 +580,8 @@ class PipelineSchema:
         self.schema_from_scratch = True
         # Use Jinja to render the template schema file to a variable
         env = jinja2.Environment(
-            loader=jinja2.PackageLoader("nf_core", "pipeline-template"), keep_trailing_newline=True
+            loader=jinja2.PackageLoader("nf_core", "pipeline-template"),
+            keep_trailing_newline=True,
         )
         schema_template = env.get_template("nextflow_schema.json")
         template_vars = {
@@ -714,7 +727,10 @@ class PipelineSchema:
         self.schema, params_removed = self.remove_schema_notfound_configs_single_schema(self.schema)
         # Sub-schemas in definitions
         for d_key, definition in self.schema.get("definitions", {}).items():
-            cleaned_schema, p_removed = self.remove_schema_notfound_configs_single_schema(definition)
+            (
+                cleaned_schema,
+                p_removed,
+            ) = self.remove_schema_notfound_configs_single_schema(definition)
             self.schema["definitions"][d_key] = cleaned_schema
             params_removed.extend(p_removed)
 

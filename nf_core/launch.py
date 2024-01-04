@@ -16,7 +16,7 @@ from rich.prompt import Confirm
 
 import nf_core.schema
 import nf_core.utils
-from nf_core.lint_utils import dump_json_with_prettier
+from nf_core.lint_utils import dump_json_with_ruff
 
 log = logging.getLogger(__name__)
 
@@ -77,7 +77,10 @@ class Launch:
                         "help_text": "If not specified, Nextflow will automatically generate a random mnemonic.",
                         "pattern": "^[a-zA-Z0-9-_]+$",
                     },
-                    "-profile": {"type": "string", "description": "Configuration profile"},
+                    "-profile": {
+                        "type": "string",
+                        "description": "Configuration profile",
+                    },
                     "-work-dir": {
                         "type": "string",
                         "description": "Work directory for intermediate files",
@@ -208,14 +211,19 @@ class Launch:
 
             if not self.pipeline_revision:
                 try:
-                    self.pipeline, wf_releases, wf_branches = nf_core.utils.get_repo_releases_branches(
-                        self.pipeline, self.wfs
-                    )
+                    (
+                        self.pipeline,
+                        wf_releases,
+                        wf_branches,
+                    ) = nf_core.utils.get_repo_releases_branches(self.pipeline, self.wfs)
                 except AssertionError as e:
                     log.error(e)
                     return False
 
-                self.pipeline_revision, _ = nf_core.utils.prompt_pipeline_release_branch(wf_releases, wf_branches)
+                (
+                    self.pipeline_revision,
+                    _,
+                ) = nf_core.utils.prompt_pipeline_release_branch(wf_releases, wf_branches)
             self.nextflow_cmd += f" -r {self.pipeline_revision}"
 
         # Get schema from name, load it and lint it
@@ -475,7 +483,11 @@ class Launch:
             for msg in error_msgs:
                 question["choices"].append(
                     questionary.Choice(
-                        [("bg:ansiblack fg:ansired bold", " error "), ("fg:ansired", f" - {msg}")], disabled=True
+                        [
+                            ("bg:ansiblack fg:ansired bold", " error "),
+                            ("fg:ansired", f" - {msg}"),
+                        ],
+                        disabled=True,
                     )
                 )
             error_msgs = []
@@ -697,7 +709,7 @@ class Launch:
         if len(self.schema_obj.input_params) > 0:
             # Write the user selection to a file and run nextflow with that
             if self.use_params_file:
-                dump_json_with_prettier(self.params_out, self.schema_obj.input_params)
+                dump_json_with_ruff(self.params_out, self.schema_obj.input_params)
                 self.nextflow_cmd += f' -params-file "{os.path.relpath(self.params_out)}"'
 
             # Call nextflow with a list of command line flags

@@ -21,7 +21,7 @@ import yaml
 import nf_core
 import nf_core.schema
 import nf_core.utils
-from nf_core.lint_utils import run_prettier_on_file
+from nf_core.lint_utils import run_prettier_on_file, run_ruff_on_file
 
 log = logging.getLogger(__name__)
 
@@ -56,8 +56,18 @@ class PipelineCreate:
         plain=False,
         default_branch=None,
     ):
-        self.template_params, skip_paths_keys, self.template_yaml = self.create_param_dict(
-            name, description, author, version, template_yaml_path, plain, outdir if outdir else "."
+        (
+            self.template_params,
+            skip_paths_keys,
+            self.template_yaml,
+        ) = self.create_param_dict(
+            name,
+            description,
+            author,
+            version,
+            template_yaml_path,
+            plain,
+            outdir if outdir else ".",
         )
 
         skippable_paths = {
@@ -90,7 +100,16 @@ class PipelineCreate:
             outdir = os.path.join(os.getcwd(), self.template_params["name_noslash"])
         self.outdir = Path(outdir)
 
-    def create_param_dict(self, name, description, author, version, template_yaml_path, plain, pipeline_dir):
+    def create_param_dict(
+        self,
+        name,
+        description,
+        author,
+        version,
+        template_yaml_path,
+        plain,
+        pipeline_dir,
+    ):
         """Creates a dictionary of parameters for the new pipeline.
 
         Args:
@@ -136,7 +155,11 @@ class PipelineCreate:
             "ci": {"name": "GitHub CI", "file": True, "content": False},
             "github_badges": {"name": "GitHub badges", "file": False, "content": True},
             "igenomes": {"name": "iGenomes config", "file": True, "content": True},
-            "nf_core_configs": {"name": "nf-core/configs", "file": False, "content": True},
+            "nf_core_configs": {
+                "name": "nf-core/configs",
+                "file": False,
+                "content": True,
+            },
         }
 
         # Once all necessary parameters are set, check if the user wants to customize the template more
@@ -210,13 +233,16 @@ class PipelineCreate:
         while not re.match(r"^[a-zA-Z_][a-zA-Z0-9-_]*$", prefix):
             log.error("[red]Pipeline prefix cannot start with digit or hyphen and cannot contain punctuation.[/red]")
             prefix = questionary.text(
-                "Please provide a new pipeline prefix", style=nf_core.utils.nfcore_question_style
+                "Please provide a new pipeline prefix",
+                style=nf_core.utils.nfcore_question_style,
             ).unsafe_ask()
         template_yaml["prefix"] = prefix
 
         choices = [{"name": template_areas[area]["name"], "value": area} for area in template_areas]
         template_yaml["skip"] = questionary.checkbox(
-            "Skip template areas?", choices=choices, style=nf_core.utils.nfcore_question_style
+            "Skip template areas?",
+            choices=choices,
+            style=nf_core.utils.nfcore_question_style,
         ).unsafe_ask()
         return template_yaml
 
@@ -234,7 +260,8 @@ class PipelineCreate:
         while not re.match(r"^[a-z]+$", wf_name):
             log.error("[red]Invalid workflow name: must be lowercase without punctuation.")
             wf_name = questionary.text(
-                "Please provide a new workflow name", style=nf_core.utils.nfcore_question_style
+                "Please provide a new workflow name",
+                style=nf_core.utils.nfcore_question_style,
             ).unsafe_ask()
         return wf_name
 
@@ -282,7 +309,8 @@ class PipelineCreate:
 
         # Run jinja2 for each file in the template folder
         env = jinja2.Environment(
-            loader=jinja2.PackageLoader("nf_core", "pipeline-template"), keep_trailing_newline=True
+            loader=jinja2.PackageLoader("nf_core", "pipeline-template"),
+            keep_trailing_newline=True,
         )
         template_dir = os.path.join(os.path.dirname(__file__), "pipeline-template")
         object_attrs = self.template_params
@@ -386,7 +414,7 @@ class PipelineCreate:
         schema.get_wf_params()
         schema.remove_schema_notfound_configs()
         schema.save_schema(suppress_logging=True)
-        run_prettier_on_file(schema_path)
+        run_ruff_on_file(schema_path)
 
     def remove_nf_core_in_bug_report_template(self):
         """

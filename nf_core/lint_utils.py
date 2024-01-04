@@ -2,6 +2,7 @@ import json
 import logging
 import subprocess
 from pathlib import Path
+from typing import Union
 
 import rich
 from rich.console import Console
@@ -67,7 +68,15 @@ def run_prettier_on_file(file):
     nf_core_pre_commit_config = Path(nf_core.__file__).parent / ".pre-commit-prettier-config.yaml"
     try:
         subprocess.run(
-            ["pre-commit", "run", "--config", nf_core_pre_commit_config, "prettier", "--files", file],
+            [
+                "pre-commit",
+                "run",
+                "--config",
+                nf_core_pre_commit_config,
+                "prettier",
+                "--files",
+                file,
+            ],
             capture_output=True,
             check=True,
         )
@@ -85,12 +94,37 @@ def run_prettier_on_file(file):
             )
 
 
-def dump_json_with_prettier(file_name, file_content):
-    """Dump a JSON file and run prettier on it.
+def run_ruff_on_file(file: Union[Path, str]) -> bool:
+    """Run ruff formatter on a file.
+
+    Args:
+        file (Path | str): A file identifier as a string or pathlib.Path.
+
+    Warns:
+        If Ruff is not installed, a warning is logged.
+    """
+    try:
+        subprocess.check_output(["ruff format", file], stderr=subprocess.STDOUT)
+    except FileNotFoundError:
+        log.warning(
+            "Ruff is not installed. " "Please install it with 'pip install ruff' to automatically format your files."
+        )
+    except subprocess.CalledProcessError as e:
+        log.warning(f"Ruff failed to format file {file}:\n{e.output.decode('utf-8')}")
+    except Exception as e:
+        log.warning(f"Ruff failed to format file {file}:\n{e}")
+    else:
+        log.info(f"Ruff formatted file {file}")
+        return True
+    return False
+
+
+def dump_json_with_ruff(file_name: Union[Path, str], file_content: dict) -> bool:
+    """Dump a JSON file and run ruff on it.
     Args:
         file_name (Path | str): A file identifier as a string or pathlib.Path.
         file_content (dict): Content to dump into the JSON file
     """
     with open(file_name, "w") as fh:
         json.dump(file_content, fh, indent=4)
-    run_prettier_on_file(file_name)
+    return run_ruff_on_file(file_name)
