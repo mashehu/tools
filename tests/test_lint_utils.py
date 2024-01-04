@@ -59,6 +59,16 @@ def test_run_prettier_on_malformed_file(malformed_json):
     assert malformed_json.read_text() == JSON_FORMATTED
 
 
+def test_run_ruff_on_formatted_file(formatted_json):
+    nf_core.lint_utils.run_ruff_on_file(formatted_json)
+    assert formatted_json.read_text() == JSON_FORMATTED
+
+
+def test_run_ruff_on_malformed_file(malformed_json):
+    nf_core.lint_utils.run_ruff_on_file(malformed_json)
+    assert malformed_json.read_text() == JSON_FORMATTED
+
+
 def test_run_prettier_on_syntax_error_file(syntax_error_json, caplog):
     nf_core.lint_utils.run_prettier_on_file(syntax_error_json)
     expected_critical_log = "SyntaxError: Unexpected token (1:10)"
