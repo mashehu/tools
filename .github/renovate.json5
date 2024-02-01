@@ -13,6 +13,11 @@
             matchDatasources: ["docker"],
             registryUrls: ["docker.io"],
         },
+        {
+            depTypeList: ["action"],
+            matchPackageNames: ["nf-core/setup-nextflow"],
+            pinDigest: false,
+        },
     ],
     gitIgnoredAuthors: ["core@nf-co.re"],
 }
