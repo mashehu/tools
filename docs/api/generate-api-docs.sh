@@ -70,6 +70,9 @@ for release in "${releases[@]}"; do
         echo -e "\n\e[31mRemoving $output_dir/$release because of '--force'\e[0m"
         rm -rf "$output_dir/$release"
     fi
+    # make the output directory
+    mkdir -p "$output_dir/$release"
+
     sphinx-build -b markdown docs/api/_src "$output_dir/$release"
 
     # undo all changes
