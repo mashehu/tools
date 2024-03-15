@@ -1,4 +1,6 @@
 #!/bin/bash
+# Set the output directory
+output_dir="${HOME}/nf-core.astro/src/content/tools/docs"
 
 # allow --force option and also a --release option (which takes a release name, or "all")
 force=false
@@ -13,10 +15,6 @@ while [[ $# -gt 0 ]]; do
             shift
             releases+=("$1")
             ;;
-        -o | --output )
-            shift
-            output_dir="$1"
-            ;;
         * )
             echo "Invalid argument: $1"
             exit 1
@@ -24,12 +22,6 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
-
-
-# Set the output directory if not set
-if [[ -z "$output_dir" ]]; then
-    output_dir="../src/content/tools/docs"
-fi
 
 # if no release is specified, use all releases
 if [[ ${#releases[@]} -eq 0 ]]; then
@@ -50,11 +42,6 @@ for release in "${releases[@]}"; do
     # add the napoleon extension to the sphinx conf.py
     sed -i 's/^extensions = \[/extensions = \[\n    "sphinx_markdown_builder",/' docs/api/_src/conf.py
 
-    # run docs/api/make_lint_md.py if it exists
-    # if [[ -f "docs/api/make_lint_md.py" ]]; then
-    #     python docs/api/make_lint_md.py
-    # fi
-
     find nf_core -name "*.py" | while IFS= read -r file; do
         # echo "Processing $file"
 
@@ -71,11 +58,6 @@ for release in "${releases[@]}"; do
         rm -rf "$output_dir/$release"
     fi
     sphinx-build -b markdown docs/api/_src "$output_dir/$release"
-
-    # undo all changes
-    git restore .
-
-    git checkout -
     # replace :::{seealso} with :::tip in the markdown files
     find "$output_dir/$release" -name "*.md" -exec sed -i 's/:::{seealso}/:::tip/g' {} \;
     i=1
@@ -83,7 +65,7 @@ for release in "${releases[@]}"; do
     find "$output_dir/$release" -name "*.md" | while IFS= read -r file; do
         # echo "Processing $file"
         printf "\b${sp:i++%${#sp}:1}"
-        node docs/api/remark.mjs "$file"
+        node remark.mjs "$file"
     done
     # remove empty files
     find "$output_dir/$release" -name "*.md" -size 0 -delete
@@ -91,4 +73,6 @@ for release in "${releases[@]}"; do
     rm -rf "$output_dir/$release/.doctrees"
     # run pre-commit to fix any formatting issues on the generated markdown files
     pre-commit run --files "$output_dir/$release"
+    # undo all changes
+    git restore .
 done
