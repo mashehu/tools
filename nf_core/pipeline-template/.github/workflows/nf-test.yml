@@ -1,8 +1,4 @@
 name: Run nf-test
-
-permissions:
-  pull-requests: write
-
 on:
   push:
     paths-ignore:
@@ -105,7 +101,6 @@ jobs:
           fetch-depth: 0
 
       - name: Run nf-test
-        id: run-test
         uses: ./.github/actions/nf-test
         continue-on-error: ${{ matrix.NXF_VER == 'latest-everything' }}
         env:
