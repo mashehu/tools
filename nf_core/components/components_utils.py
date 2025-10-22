@@ -183,16 +183,20 @@ def get_components_to_install(
                         component_name = list(component.keys())[0].lower()
                         branch = component[component_name].get("branch")
                         git_remote = component[component_name]["git_remote"]
-                        modules_repo = ModulesRepo(git_remote, branch=branch)
+
+                        # Determine if this is a module or subworkflow based on what's in main.nf
                         current_comp_dict = subworkflows if component_name in subworkflows else modules
 
-                        component_dict = {
-                            "org_path": modules_repo.repo_path,
-                            "git_remote": git_remote,
-                            "branch": branch,
-                        }
-
-                        current_comp_dict[component_name].update(component_dict)
+                        # Only update component info if it's actually included in main.nf
+                        # Components in meta.yml but not in main.nf will be caught by lint tests
+                        if component_name in current_comp_dict:
+                            modules_repo = ModulesRepo(git_remote, branch=branch)
+                            component_dict = {
+                                "org_path": modules_repo.repo_path,
+                                "git_remote": git_remote,
+                                "branch": branch,
+                            }
+                            current_comp_dict[component_name].update(component_dict)
 
     return list(modules.values()), list(subworkflows.values())
 

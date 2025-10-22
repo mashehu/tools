@@ -131,6 +131,7 @@ def meta_yml(subworkflow_lint_object, subworkflow, allow_missing: bool = False):
         included_components_names = [component["name"] for component in included_components]
         if "components" in meta_yaml:
             meta_components = [x if isinstance(x, str) else list(x)[0] for x in meta_yaml["components"]]
+            # Check that components in main.nf are in meta.yml
             for component in set(included_components_names):
                 if component in meta_components:
                     subworkflow.passed.append(
@@ -147,6 +148,17 @@ def meta_yml(subworkflow_lint_object, subworkflow, allow_missing: bool = False):
                             "meta_yml",
                             "meta_include",
                             f"Included module/subworkflow `{component}` missing in `meta.yml`",
+                            subworkflow.meta_yml,
+                        )
+                    )
+            # Check that components in meta.yml are actually used in main.nf
+            for component in set(meta_components):
+                if component not in included_components_names:
+                    subworkflow.failed.append(
+                        (
+                            "meta_yml",
+                            "meta_include",
+                            f"Module/subworkflow `{component}` specified in `meta.yml` but not included in `main.nf`",
                             subworkflow.meta_yml,
                         )
                     )
