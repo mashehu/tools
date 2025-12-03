@@ -93,6 +93,8 @@ NFCORE_CACHE_DIR = Path(
 )
 NFCORE_DIR = Path(os.environ.get("XDG_CONFIG_HOME", os.path.join(os.getenv("HOME") or "", ".config")), "nfcore")
 
+# TODO container-conversion: Add constants
+
 
 def unquote(s: str) -> str:
     """
