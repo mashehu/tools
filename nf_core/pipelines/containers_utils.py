@@ -54,18 +54,6 @@ class ContainerConfigs:
             processes = inspect_data.get("processes", [])
             module_names = [p.get("name") for p in processes if p.get("name")]
 
-            # Initialize containers dict for all platforms
-            containers: dict[str, dict[str, str]] = {
-                "docker_amd64": {},
-                "docker_arm64": {},
-                "singularity_oras_amd64": {},
-                "singularity_oras_arm64": {},
-                "singularity_https_amd64": {},
-                "singularity_https_arm64": {},
-                "conda_amd64_lockfile": {},
-                "conda_arm64_lockfile": {},
-            }
-
         except RuntimeError as e:
             log.error("Running 'nextflow inspect' failed with the following error:")
             raise UserWarning(e)
@@ -73,43 +61,57 @@ class ContainerConfigs:
             log.error("Failed to parse JSON output from 'nextflow inspect':")
             raise UserWarning(e)
 
-        # Populate containers for all platforms from module meta.yml files
+        # Define platform configurations
+        platforms: dict[str, tuple[str, str, str]] = {
+            "docker_amd64": ("docker", "linux_amd64", "name"),
+            "docker_arm64": ("docker", "linux_arm64", "name"),
+            "singularity_oras_amd64": ("singularity", "linux_amd64", "name"),
+            "singularity_oras_arm64": ("singularity", "linux_arm64", "name"),
+            "singularity_https_amd64": ("singularity", "linux_amd64", "https"),
+            "singularity_https_arm64": ("singularity", "linux_arm64", "https"),
+            "conda_amd64_lockfile": ("conda", "linux_amd64", "lock_file"),
+            "conda_arm64_lockfile": ("conda", "linux_arm64", "lock_file"),
+        }
+
+        # Build containers dict from module meta.yml files
+        # Pre-initialize all platforms to avoid repeated existence checks
+        containers: dict[str, dict[str, str]] = {platform: {} for platform in platforms}
+
         for module_name in module_names:
-            # Find module containers in meta.yml
-            if "_" in module_name:
-                module_path = Path(module_name.split("_")[0].lower()) / module_name.split("_")[1].lower()
+            # Parse module path once with maxsplit to handle edge cases
+            parts = module_name.split("_", 1)
+            if len(parts) == 2:
+                module_path = Path(parts[0].lower()) / parts[1].lower()
             else:
                 module_path = Path(module_name.lower())
 
+            meta_path = self.workflow_directory / "modules" / self.org / module_path / "meta.yml"
+
             try:
-                with open(self.workflow_directory / "modules" / self.org / module_path / "meta.yml") as fh:
+                with open(meta_path) as fh:
                     meta = yaml.safe_load(fh)
             except FileNotFoundError:
                 log.warning(f"Could not find meta.yml for {module_name}")
                 continue
 
-            platforms: dict[str, list[str]] = {
-                "docker_amd64": ["docker", "linux_amd64", "name"],
-                "docker_arm64": ["docker", "linux_arm64", "name"],
-                "singularity_oras_amd64": ["singularity", "linux_amd64", "name"],
-                "singularity_oras_arm64": ["singularity", "linux_arm64", "name"],
-                "singularity_https_amd64": ["singularity", "linux_amd64", "https"],
-                "singularity_https_arm64": ["singularity", "linux_arm64", "https"],
-                "conda_amd64_lockfile": ["conda", "linux_amd64", "lock_file"],
-                "conda_arm64_lockfile": ["conda", "linux_arm64", "lock_file"],
-            }
-
-            for p_name, (runtime, arch, protocol) in platforms.items():
+            # Extract containers for all platforms in one pass
+            for platform_name, (runtime, arch, protocol) in platforms.items():
                 try:
-                    containers[p_name][module_name] = meta["containers"][runtime][arch][protocol]
-                except KeyError:
-                    log.warning(f"Could not find {p_name} container for {module_name}")
-                    continue
+                    container = meta["containers"][runtime][arch][protocol]
+                    containers[platform_name][module_name] = container
+                except (KeyError, TypeError):
+                    log.warning(f"No {platform_name} container for {module_name}")
 
-        # write config files
-        for platform in containers.keys():
-            with open(self.workflow_directory / "conf" / f"containers_{platform}.config", "w") as fh:
-                for module_name in containers[platform].keys():
-                    fh.write(
-                        f"process {{ withName: '{module_name}' {{ container = '{containers[platform][module_name]}' }} }}\n"
-                    )
+        # Write config files (build content in memory first, then write once)
+        for platform, module_containers in containers.items():
+            if not module_containers:
+                continue
+
+            # Build content as list, join once for efficiency
+            lines = [
+                f"process {{ withName: '{module_name}' {{ container = '{container}' }} }}\n"
+                for module_name, container in module_containers.items()
+            ]
+
+            config_path = self.workflow_directory / "conf" / f"containers_{platform}.config"
+            config_path.write_text("".join(lines))
