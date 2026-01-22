@@ -390,7 +390,7 @@ def modules_containers_create(ctx, module, directory, await_build: bool):
                 "[bold blue]{task.description}",
                 rich.progress.BarColumn(bar_width=None),
                 "[magenta]{task.completed} of {task.total}[reset]",
-                transient=False,
+                transient=True,
                 console=console,
                 disable=ctx.obj["hide_progress"],
             )
@@ -433,7 +433,7 @@ def modules_containers_create(ctx, module, directory, await_build: bool):
                 "[bold blue]{task.description}",
                 rich.progress.BarColumn(bar_width=None),
                 "[magenta]{task.completed} of {task.total}[reset]",
-                transient=False,
+                transient=True,
                 console=console,
                 disable=ctx.obj["hide_progress"],
             )
