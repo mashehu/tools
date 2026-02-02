@@ -22,6 +22,33 @@ from pathlib import Path
 
 REPO_URL = "https://github.com/nf-core/tools"
 
+# Section headers in CHANGELOG.md
+SECTIONS = {
+    "Template": "### Template",
+    "Download": "### Download",
+    "Linting": "### Linting",
+    "Modules": "### Modules",
+    "Subworkflows": "### Subworkflows",
+}
+DEFAULT_SECTION = "General"
+DEFAULT_SECTION_HEADER = "### General"
+
+# Skip patterns
+SKIP_CHANGELOG_PATTERNS = [
+    "skip changelog",
+    "skip change log",
+    "no changelog",
+    "no change log",
+    "bump version",
+]
+
+# Changelog file title
+CHANGELOG_TITLE = "# nf-core/tools: Changelog"
+
+# Version patterns
+VERSION_HEADER_PREFIX = "## "
+VERSION_REGEX = r".*(v\d+\.\d+\.\d+(dev)?).*"
+
 # Assumes the environment is set by the GitHub action.
 pr_title = os.environ["PR_TITLE"]
 pr_number = os.environ["PR_NUMBER"]
@@ -36,41 +63,45 @@ pr_title = pr_title.removesuffix(f" (#{pr_number})")  # type: ignore
 
 changelog_path = workspace_path / "CHANGELOG.md"
 
-if any(
-    line in pr_title.lower()
-    for line in [
-        "skip changelog",
-        "skip change log",
-        "no changelog",
-        "no change log",
-        "bump version",
-    ]
-):
+if any(line in pr_title.lower() for line in SKIP_CHANGELOG_PATTERNS):
     print("Skipping changelog update")
     sys.exit(0)
+
+
+def _normalize_section_name(name: str) -> str:
+    """
+    Normalize section name for matching by removing plural 's' and 'ing' suffix.
+    E.g., 'Linting' -> 'Lint', 'Modules' -> 'Module'
+    """
+    normalized = name.lower()
+    # Remove 'ing' suffix (e.g., 'Linting' -> 'Lint')
+    if normalized.endswith("ing"):
+        normalized = normalized[:-3]
+    # Remove plural 's' (e.g., 'Modules' -> 'Module')
+    elif normalized.endswith("s"):
+        normalized = normalized[:-1]
+    return normalized
 
 
 def _determine_change_type(pr_title) -> tuple[str, str]:
     """
     Determine the type of the PR: Template, Download, Linting, Modules, Subworkflows, or General
-    Returns a tuple of the section name and the module info.
+    Returns a tuple of the section name and the section header.
     """
-    sections = {
-        "Template": "### Template",
-        "Download": "### Download",
-        "Linting": "### Linting",
-        "Modules": "### Modules",
-        "Subworkflows": "### Subworkflows",
-    }
-    current_section_header = "### General"
-    current_section = "General"
+    current_section_header = DEFAULT_SECTION_HEADER
+    current_section = DEFAULT_SECTION
 
-    # Check if the PR in any of the sections.
-    for section, section_header in sections.items():
-        # check if the PR title contains any of the section headers, with some loose matching, e.g. removing plural and suffixes
-        if re.sub(r"s$", "", section.lower().replace("ing", "")) in pr_title.lower():
+    pr_title_lower = pr_title.lower()
+
+    # Check if the PR title matches any of the sections.
+    for section, section_header in SECTIONS.items():
+        normalized_section = _normalize_section_name(section)
+        # Match normalized section name or exact section name
+        if normalized_section in pr_title_lower or section.lower() in pr_title_lower:
             current_section_header = section_header
             current_section = section
+            break
+
     print(f"Detected section: {current_section}")
     return current_section, current_section_header
 
@@ -96,8 +127,16 @@ print(f"Adding new lines into section '{section}':\n" + "".join(new_lines))
 # Finally, updating the changelog.
 # Read the current changelog lines. We will print them back as is, except for one new
 # entry, corresponding to this new PR.
-with changelog_path.open("r") as f:
-    orig_lines = f.readlines()
+try:
+    with changelog_path.open("r") as f:
+        orig_lines = f.readlines()
+except FileNotFoundError:
+    print(f"Error: CHANGELOG.md not found at {changelog_path}", file=sys.stderr)
+    sys.exit(1)
+except OSError as e:
+    print(f"Error reading CHANGELOG.md: {e}", file=sys.stderr)
+    sys.exit(1)
+
 updated_lines: list[str] = []
 
 
@@ -136,14 +175,14 @@ while orig_lines:
     line = _skip_existing_entry_for_this_pr(line, same_section=False)
 
     if (
-        line.startswith("## ") and not line.strip() == "# nf-core/tools: Changelog"
-    ):  # Version header, e.g. "## v2.12dev"
+        line.startswith(VERSION_HEADER_PREFIX) and not line.strip() == CHANGELOG_TITLE
+    ):  # Version header, e.g. "## v2.12.0dev"
         print(f"Found version header: {line.strip()}")
         updated_lines.append(line)
 
         # Parse version from the line `## v2.12.0dev` or
         # `## [v2.11.1 - Magnesium Dragon Patch](https://github.com/nf-core/tools/releases/tag/2.11) - [2023-12-20]` ...
-        if not (m := re.match(r".*(v\d+\.\d+\.\d+(dev)?).*", line)):
+        if not (m := re.match(VERSION_REGEX, line)):
             print(f"Cannot parse version from line {line.strip()}.", file=sys.stderr)
             sys.exit(1)
         version = m.group(1)
@@ -190,6 +229,12 @@ while orig_lines:
         # Collecting lines until the next section.
         section_lines: list[str] = []
         while True:
+            if not orig_lines:
+                print(
+                    f"Error: Reached end of file while processing section '{section}' without finding next section header",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
             line = orig_lines.pop(0)
             if line.startswith("#"):
                 print(f"Found the next section header: {line.strip()}")
@@ -227,5 +272,9 @@ updated_lines = collapse_newlines(updated_lines)
 
 
 # Finally, writing the updated lines back.
-with changelog_path.open("w") as f:
-    f.writelines(updated_lines)
+try:
+    with changelog_path.open("w") as f:
+        f.writelines(updated_lines)
+except OSError as e:
+    print(f"Error writing to CHANGELOG.md: {e}", file=sys.stderr)
+    sys.exit(1)
