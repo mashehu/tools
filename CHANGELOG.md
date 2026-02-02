@@ -18,7 +18,6 @@
 - Fix docker errors in test ([#3924](https://github.com/nf-core/tools/pull/3924))
 - switch to uv and pyproject.toml ([#3925](https://github.com/nf-core/tools/pull/3925))
 - dockerhub action: add disk clean-up step and combine the two actions ([#3926](https://github.com/nf-core/tools/pull/3926))
-- Update actions/setup-python digest to 83679a8 ([#3928](https://github.com/nf-core/tools/pull/3928))
 - Pin j178/prek-action action to 91fd7d7 ([#3931](https://github.com/nf-core/tools/pull/3931))
 - Simplify coverage reporting in pytest.yml ([#3934](https://github.com/nf-core/tools/pull/3934))
 - add pre-commit hook to keep uv.lock in sync ([#3933](https://github.com/nf-core/tools/pull/3933))
@@ -84,6 +83,8 @@
     - [nf-teams](https://github.com/nvnieuwk/nf-teams)
 - Add `.lineage/` directory to the template .gitignore ([#4075](https://github.com/nf-core/tools/pull/4075)).
 - Fix nf-core tools version to what is specified in `.nf-core.yml` for the GitHub workflow `download_pipeline.yml` ([#4124](https://github.com/nf-core/tools/pull/4124)).
+- switch to uv and prek for pipeline linting workflow ([#3942](https://github.com/nf-core/tools/pull/3942))
+- add schema to devcontainer.json ([#3908](https://github.com/nf-core/tools/pull/3908))
 
 #### Version updates
 
@@ -107,21 +108,12 @@
 - Fix quote handling in meta.yml ([#3948](https://github.com/nf-core/tools/pull/3948))
 - Implement wave container commands ([#3954](https://github.com/nf-core/tools/pull/3954))
 - Fix quote handling in meta.yml ([#3948](https://github.com/nf-core/tools/pull/3948))
-- Update actions/checkout digest to 8e8c483 ([#3956](https://github.com/nf-core/tools/pull/3956))
-- Update GitHub Actions ([#3957](https://github.com/nf-core/tools/pull/3957))
-- Update astral-sh/setup-uv digest to ed21f2f ([#3959](https://github.com/nf-core/tools/pull/3959))
-- Update codecov/codecov-action digest to 671740a ([#3962](https://github.com/nf-core/tools/pull/3962))
 - Add support for SVG files in bump-version command ([#3978](https://github.com/nf-core/tools/pull/3978))
 - handle type for val in topics correctly ([#3991](https://github.com/nf-core/tools/pull/3991))
 - Update docker/login-action digest to c94ce9f ([#3998](https://github.com/nf-core/tools/pull/3998))
 - fix wrong parsing when output values contain spaces ([#3999](https://github.com/nf-core/tools/pull/3999))
 - fix failing devcontainer builds ([#4013](https://github.com/nf-core/tools/pull/4013))
 - Update codecov/codecov-action digest to 671740a ([#4000](https://github.com/nf-core/tools/pull/4000))
-
-### Template
-
-- switch to uv and prek for pipeline linting workflow ([#3942](https://github.com/nf-core/tools/pull/3942))
-- add schema to devcontainer.json ([#3908](https://github.com/nf-core/tools/pull/3908))
 
 ### Linting
 
