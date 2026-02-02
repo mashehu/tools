@@ -141,9 +141,9 @@ while orig_lines:
         print(f"Found version header: {line.strip()}")
         updated_lines.append(line)
 
-        # Parse version from the line `## v2.12dev` or
+        # Parse version from the line `## v2.12.0dev` or
         # `## [v2.11.1 - Magnesium Dragon Patch](https://github.com/nf-core/tools/releases/tag/2.11) - [2023-12-20]` ...
-        if not (m := re.match(r".*(v\d+\.\d+.\d*(dev)?).*", line)):
+        if not (m := re.match(r".*(v\d+\.\d+\.\d+(dev)?).*", line)):
             print(f"Cannot parse version from line {line.strip()}.", file=sys.stderr)
             sys.exit(1)
         version = m.group(1)
