@@ -5,6 +5,30 @@
 ### General
 
 - Update pre-commit hook astral-sh/uv-pre-commit to v0.10.2 ([#4037](https://github.com/nf-core/tools/pull/4037))
+- Add aliases to common sub-subcommands like `install`, `lint`, etc. ([#3980](https://github.com/nf-core/tools/pull/3980))
+
+  | Command                    | Subcommand                     | Aliases                           |
+  | -------------------------- | ------------------------------ | --------------------------------- |
+  | `modules` & `subworkflows` |                                | `module`,`m` & `subworkflow`,`s`  |
+  |                            | `bump-versions` (modules only) | `bump-version`, `bump`, `bv`, `b` |
+  |                            | `create`                       | `c`                               |
+  |                            | `install`                      | `add`, `i`                        |
+  |                            | `lint`                         | `l`                               |
+  |                            | `list`                         | `ls`                              |
+  |                            | `patch`                        | `p`                               |
+  |                            | `remove`                       | `uninstall`, `rm`                 |
+  |                            | `test`                         | `t`                               |
+  |                            | `update`                       | `up`, `u`                         |
+  | `pipelines`                |                                | `pipeline`,`p`                    |
+  |                            | `bump-version`                 | `bump`, `bv`, `b`                 |
+  |                            | `create`                       | `c`                               |
+  |                            | `download`                     | `d`                               |
+  |                            | `lint`                         | `l`                               |
+  |                            | `list`                         | `ls`                              |
+  |                            | `sync`                         | `s`                               |
+  | `test-datasets`            |                                | `test-datasets`,`tds`,`td`, `t`,  |
+  |                            | `list`                         | `ls`                              |
+  |                            | `list-branches`                | `lsb`                             |
 
 ### Linting
 
