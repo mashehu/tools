@@ -366,6 +366,39 @@ def check_nextflow_version(minimal_nf_version: tuple[int, int, int, bool], silen
     return nf_version >= minimal_nf_version
 
 
+def nextflow_inspect(main_nf: Path, format: str = "json", profile: str = "docker") -> str | None:
+    if not check_nextflow_version(NF_INSPECT_MIN_NF_VERSION):
+        raise ValueError(
+            f"Nextflow inspect cannot be run with this version of nextflow. nextflow >={NF_INSPECT_MIN_NF_VERSION} required"
+        )
+
+    if not main_nf.exists():
+        raise ValueError(f"Specified main.nf file {main_nf.absolute()} does not exist!")
+
+    valid_formats = ("json",)
+    if format and format.lower() not in valid_formats:
+        raise ValueError(f"Invalid format: {format} Must be one of ({','.join(valid_formats)})")
+
+    with set_wd_tempdir():
+        executable = "nextflow"
+        cmd_params = "inspect"
+        cmd_params += f"-format {format}" if format else ""
+        cmd_params += f"-profile {profile}" if profile else ""
+        cmd_params += str(main_nf.absolute())
+
+        log.debug("Running nextflow inspect to extract docker container")
+        cmd_out = run_cmd(executable, cmd_params)
+
+        if cmd_out is None:
+            log.debug(f"Failed to run `{executable} {cmd_params}`")
+            return None
+
+        out, _ = cmd_out
+        out_str = str(out, encoding="utf-8")
+
+        return json.loads(out_str)
+
+
 def fetch_wf_config(wf_path: Path, cache_config: bool = True) -> dict:
     """Uses Nextflow to retrieve the the configuration variables
     from a Nextflow workflow.
