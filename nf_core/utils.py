@@ -366,7 +366,7 @@ def check_nextflow_version(minimal_nf_version: tuple[int, int, int, bool], silen
     return nf_version >= minimal_nf_version
 
 
-def nextflow_inspect(main_nf: Path, format: str = "json", profile: str = "docker") -> str | None:
+def nextflow_inspect(main_nf: Path, format: str = "json", profile: str = "docker") -> dict | None:
     if not check_nextflow_version(NF_INSPECT_MIN_NF_VERSION):
         raise ValueError(
             f"Nextflow inspect cannot be run with this version of nextflow. nextflow >={NF_INSPECT_MIN_NF_VERSION} required"
