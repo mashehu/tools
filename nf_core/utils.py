@@ -94,8 +94,22 @@ NFCORE_CACHE_DIR = Path(
 )
 NFCORE_DIR = Path(os.environ.get("XDG_CONFIG_HOME", os.path.join(os.getenv("HOME") or "", ".config")), "nfcore")
 
+
+class Platform(str):
+    """A string subclass that treats '/' and '_' as equivalent."""
+
+    def _normalize(self, s: str) -> str:
+        return str(s).replace("/", "_")
+
+    def __eq__(self, other) -> bool:
+        return self._normalize(self) == self._normalize(other)
+
+    def __hash__(self) -> int:
+        return hash(self._normalize(self))
+
+
 CONTAINER_SYSTEMS = ["docker", "singularity"]
-CONTAINER_PLATFORMS = ["linux/amd64", "linux/arm64"]
+CONTAINER_PLATFORMS = [Platform("linux_amd64"), Platform("linux_arm64")]
 
 
 def unquote(s: str) -> str:
