@@ -107,9 +107,6 @@ class Platform(str):
     def __hash__(self) -> int:
         return hash(self._normalize(self))
 
-    def slash_format(self) -> str:
-        return self.replace("_", "/")
-
 
 CONTAINER_SYSTEMS = ["docker", "singularity"]
 CONTAINER_PLATFORMS = [Platform("linux_amd64"), Platform("linux_arm64")]
