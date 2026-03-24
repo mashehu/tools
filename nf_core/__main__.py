@@ -17,6 +17,7 @@ from trogon import tui
 from nf_core import __version__
 from nf_core.commands_modules import (
     modules_bump_versions,
+    modules_containers_create,
     modules_create,
     modules_info,
     modules_install,
@@ -875,7 +876,7 @@ def command_pipelines_schema_docs(directory, schema_file, output, format, force,
     help="Do not pull in latest changes to local clone of modules repository.",
 )
 @click.command_panel("For pipeline development", commands=["list", "info", "install", "update", "remove", "patch"])
-@click.command_panel("For module development", commands=["create", "lint", "test", "bump-versions"])
+@click.command_panel("For module development", commands=["create", "lint", "test", "bump-versions", "containers"])
 @click.pass_context
 def modules(ctx, git_remote, branch, no_pull):
     """
@@ -1396,6 +1397,55 @@ def command_modules_bump_versions(ctx, tool, directory, all, show_all, dry_run):
     the nf-core/modules repo.
     """
     modules_bump_versions(ctx, tool, directory, all, show_all, dry_run)
+
+
+@modules.group("containers", aliases=["container", "con"])
+@click.pass_context
+def modules_containers(ctx):
+    """Manage module container builds and metadata."""
+    pass
+
+
+# nf-core modules containers create
+@modules_containers.command("create", aliases=["c"])
+@click.pass_context
+@click.option(
+    "-await",
+    "--await",
+    "await_build",
+    is_flag=True,
+    default=True,
+    help="Wait for the container build to finish.",
+)
+@click.argument(
+    "module",
+    type=str,
+    required=False,
+    callback=normalize_case,
+    metavar="<module> or <module/submodule>",
+    shell_complete=autocomplete_modules,
+)
+@click.option(
+    "-d",
+    "--dir",
+    "directory",
+    type=click.Path(exists=True),
+    default=".",
+    metavar="<nf-core/modules directory>",
+)
+@click.option(
+    "-f",
+    "--force",
+    "force",
+    is_flag=True,
+    default=False,
+    help="Force container creation even if the container already exists.",
+)
+def command_modules_containers_create(ctx, await_build, module, directory, force):
+    """
+    Build docker and singularity container files for linux/arm64 and linux/amd64 with wave from environment.yml and create container config file.
+    """
+    modules_containers_create(ctx, module, directory, await_build, force)
 
 
 # nf-core subworkflows click command

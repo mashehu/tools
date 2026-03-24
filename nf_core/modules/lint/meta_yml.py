@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -10,12 +11,52 @@ from jsonschema import exceptions, validators
 from nf_core.components.components_differ import ComponentsDiffer
 from nf_core.components.lint import ComponentLint, LintExceptionError
 from nf_core.components.nfcore_component import NFCoreComponent
-from nf_core.utils import unquote
+from nf_core.modules.lint.module_containers import (
+    lint_conda_lock_files,
+    lint_main_nf_container,
+    lint_meta_yml_containers,
+)
+from nf_core.utils import CONTAINER_SYSTEMS, unquote
 
 if TYPE_CHECKING:
     from nf_core.modules.lint import ModuleLint
 
 log = logging.getLogger(__name__)
+
+
+def meta_yml_containers(module: NFCoreComponent) -> None:
+    """
+    Lints the container information in the meta.yml file and the module's main.nf file.
+    Respects per-system skips from `skip_nf_test.json`.
+    """
+    # Determine per-system skips from skip_nf_test.json
+    skip_file = Path(module.component_dir.parent.parent.parent, ".github", "skip_nf_test.json")
+    skip_docker = False
+    skip_singularity = False
+    skip_conda = False
+    module_prefix = "modules/nf-core/" + module.component_name
+    if skip_file.is_file():
+        with open(skip_file) as fh:
+            data = json.load(fh)
+        for system in CONTAINER_SYSTEMS + ["conda"]:
+            skip_module_paths = data.get(system, [])
+            if any(isinstance(x, str) and x == module_prefix for x in skip_module_paths):
+                if system == "docker":
+                    skip_docker = True
+                elif system == "singularity":
+                    skip_singularity = True
+                elif system == "conda":
+                    skip_conda = True
+        if skip_docker or skip_singularity or skip_conda:
+            log.debug(
+                f"Skip entries found for {module.component_name}: "
+                f"docker={skip_docker}, singularity={skip_singularity}, conda={skip_conda}"
+            )
+
+    lint_meta_yml_containers(module, skip_docker=skip_docker, skip_conda=skip_conda, skip_singularity=skip_singularity)
+    lint_main_nf_container(module, skip_docker=skip_docker, skip_conda=skip_conda, skip_singularity=skip_singularity)
+    if not skip_conda:
+        lint_conda_lock_files(module)
 
 
 def meta_yml(module_lint_object: ModuleLint, module: NFCoreComponent, allow_missing: bool = False) -> None:
@@ -78,6 +119,7 @@ def meta_yml(module_lint_object: ModuleLint, module: NFCoreComponent, allow_miss
         return
     else:
         module.passed.append(("meta_yml", "meta_yml_exists", "Module `meta.yml` exists", module.meta_yml))
+    module.container = meta_yaml.get("containers", {})
 
     # Confirm that the meta.yml file is valid according to the JSON schema
     valid_meta_yml = False
@@ -261,6 +303,50 @@ def meta_yml(module_lint_object: ModuleLint, module: NFCoreComponent, allow_miss
                     )
                 )
 
+        # Check that all containers are correctly specified
+        if "containers" in meta_yaml or module.container_from_main_nf:
+            correct_containers = obtain_containers(module_lint_object, module.container)
+            meta_containers = obtain_containers(module_lint_object, meta_yaml.get("containers", {}))
+            if not meta_containers:
+                module.failed.append(
+                    (
+                        "meta_yml",
+                        "has_meta_containers",
+                        f"Module `meta.yml` does not contain any containers, even though they appear in `main.nf`. Use `nf-core modules lint {module.component_name} --fix` to automatically resolve this.",
+                        module.meta_yml,
+                    )
+                )
+            else:
+                module.passed.append(
+                    (
+                        "meta_yml",
+                        "has_meta_containers",
+                        "Module `meta.yml` and `main.nf` contain containers.",
+                        module.meta_yml,
+                    )
+                )
+
+            if correct_containers == meta_containers:
+                module.passed.append(
+                    (
+                        "meta_yml",
+                        "correct_meta_containers",
+                        "Correct containers specified in module `meta.yml`",
+                        module.meta_yml,
+                    )
+                )
+            else:
+                module.failed.append(
+                    (
+                        "meta_yml",
+                        "correct_meta_containers",
+                        f"Module `meta.yml` does not match `main.nf`. Containers should contain: {correct_containers}\nRun `nf-core modules lint --fix` to update the `meta.yml` file.",
+                        module.meta_yml,
+                    )
+                )
+
+        meta_yml_containers(module)
+
 
 def read_meta_yml(module_lint_object: ComponentLint, module: NFCoreComponent) -> dict | None:
     """
@@ -382,3 +468,25 @@ def obtain_topics(_, topics: dict) -> dict:
         formatted_topics[name] = t_elements
 
     return formatted_topics
+
+
+def obtain_containers(_, containers: dict) -> dict:
+    """
+    Obtain the dictionary of containers and their elements.
+
+    Args:
+        containers (dict): The dictionary of containers from meta.yml files.
+
+    Returns:
+        formatted_containers (dict): A dictionary containing the containers and their elements obtained from meta.yml files.
+    """
+    formatted_containers: dict = {}
+    for system in containers.keys():
+        sys_containers = containers[system]
+        platform_dict: dict = {}
+        for platform in sys_containers.keys():
+            entry = sys_containers[platform]
+            platform_dict[platform] = entry
+        formatted_containers[system] = platform_dict
+
+    return formatted_containers

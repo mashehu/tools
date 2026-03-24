@@ -18,6 +18,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tempfile
 import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
@@ -92,6 +93,23 @@ NFCORE_CACHE_DIR = Path(
     "nfcore",
 )
 NFCORE_DIR = Path(os.environ.get("XDG_CONFIG_HOME", os.path.join(os.getenv("HOME") or "", ".config")), "nfcore")
+
+
+class Platform(str):
+    """A string subclass that treats '/' and '_' as equivalent."""
+
+    def _normalize(self, s: str) -> str:
+        return str(s).replace("/", "_")
+
+    def __eq__(self, other) -> bool:
+        return self._normalize(self) == self._normalize(other)
+
+    def __hash__(self) -> int:
+        return hash(self._normalize(self))
+
+
+CONTAINER_SYSTEMS = ["docker", "singularity"]
+CONTAINER_PLATFORMS = [Platform("linux_amd64"), Platform("linux_arm64")]
 
 
 def unquote(s: str) -> str:
@@ -360,6 +378,40 @@ def check_nextflow_version(minimal_nf_version: tuple[int, int, int, bool], silen
         log.info(f"Detected Nextflow version {parsed_version_str}")
 
     return nf_version >= minimal_nf_version
+
+
+def nextflow_inspect(main_nf: Path, format: str = "json", profile: str = "docker") -> dict:
+    if not check_nextflow_version(NF_INSPECT_MIN_NF_VERSION):
+        raise ValueError(
+            f"Nextflow inspect cannot be run with this version of nextflow. nextflow >={NF_INSPECT_MIN_NF_VERSION} required"
+        )
+
+    if not main_nf.exists():
+        raise ValueError(f"Specified main.nf file {main_nf.absolute()} does not exist!")
+
+    valid_formats = ("json",)
+    if format and format.lower() not in valid_formats:
+        raise ValueError(f"Invalid format: {format} Must be one of ({','.join(valid_formats)})")
+
+    main_nf = Path(main_nf).absolute()
+    with set_wd_tempdir():
+        executable = "nextflow"
+        cmd_params = " inspect "
+        cmd_params += f" -format {format} " if format else ""
+        cmd_params += f" -profile {profile} " if profile else ""
+        cmd_params += str(main_nf)
+
+        log.debug("Running nextflow inspect to extract docker container")
+        cmd_out = run_cmd(executable, cmd_params)
+
+        if cmd_out is None:
+            log.debug(f"Failed to run `{executable} {cmd_params}`")
+            return dict()
+
+        out, _ = cmd_out
+        out_str = str(out, encoding="utf-8")
+
+        return json.loads(out_str)
 
 
 def fetch_wf_config(wf_path: Path, cache_config: bool = True) -> dict:
@@ -1668,6 +1720,17 @@ def set_wd(path: Path) -> Generator[None, None, None]:
         yield
     finally:
         os.chdir(start_wd)
+
+
+@contextmanager
+def set_wd_tempdir() -> Generator[None, None, None]:
+    """
+    Context manager to provide and change into a tempdir and ensure its removal and return to the
+    original_dir upon exceptions.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        with set_wd(Path(tmp)):
+            yield
 
 
 def get_wf_files(wf_path: Path):
