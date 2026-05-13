@@ -101,6 +101,8 @@ def environment_yml(module_lint_object: ComponentLint, module: NFCoreComponent, 
     if env_yml:
         valid_env_yml = False
         try:
+            if module_lint_object.modules_repo.local_repo_dir is None:
+                raise FileNotFoundError("No local repo clone available (HTTP registry mode)")
             with open(Path(module_lint_object.modules_repo.local_repo_dir, "modules/environment-schema.json")) as fh:
                 schema = json.load(fh)
             validators.validate(instance=env_yml, schema=schema)
