@@ -51,6 +51,7 @@ from .pipeline_name_conventions import pipeline_name_conventions
 from .pipeline_todos import pipeline_todos
 from .plugin_includes import plugin_includes
 from .readme import readme
+from .resources_table import resources_table
 from .rocrate_readme_sync import rocrate_readme_sync
 from .schema_description import schema_description
 from .schema_lint import schema_lint
@@ -104,6 +105,7 @@ class PipelineLint(nf_core.utils.Pipeline):
     pipeline_if_empty_null = pipeline_if_empty_null
     plugin_includes = plugin_includes
     readme = readme
+    resources_table = resources_table
     schema_description = schema_description
     schema_lint = schema_lint
     schema_params = schema_params
@@ -169,6 +171,7 @@ class PipelineLint(nf_core.utils.Pipeline):
             "nfcore_yml",
             "rocrate_readme_sync",
             "container_configs",
+            "resources_table",
         ] + (["version_consistency", "included_configs"] if release_mode else [])
 
     def _load(self) -> bool:

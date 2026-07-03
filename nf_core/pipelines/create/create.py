@@ -20,6 +20,7 @@ from nf_core.pipelines.containers_utils import try_generate_container_configs
 from nf_core.pipelines.create.utils import CreateConfig, features_yml_path, load_features_yaml
 from nf_core.pipelines.create_logo import create_logo
 from nf_core.pipelines.lint_utils import run_prettier_on_file
+from nf_core.pipelines.resources_utils import try_generate_resources_table
 from nf_core.pipelines.rocrate import ROCrate
 from nf_core.utils import NFCoreTemplateConfig, NFCoreYamlLintConfig, custom_yaml_dumper
 
@@ -396,6 +397,9 @@ class PipelineCreate:
 
         # generate container configs
         try_generate_container_configs(self.outdir)
+
+        # generate the compute resources table (docs/resources.md)
+        try_generate_resources_table(self.outdir)
 
         # Run prettier on files for pipelines sync
         log.debug("Running prettier on pipeline files")
